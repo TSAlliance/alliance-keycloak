@@ -10,7 +10,8 @@ configured manually before building the image.
     3. Let's Encrypt Certificates
     4. Port and Hostname
 2. Keycloak behind a reverse proxy
-3. Using docker-compose
+3. Using docker-compose [WIP]
+4. Install using install.sh [WIP]
 
 
 ## 1. Using the Dockerfile
@@ -36,4 +37,8 @@ When using Nginx as a reverse proxy, please consider changing the `KC_PROXY` env
 
 
 ## 3. Using docker-compose
+WiP
+
+## 4. Install using install.sh
+WiP
 
