@@ -4,25 +4,31 @@ sudo read -p "Enter Container name [alliance_keycloak]: " container
 sudo read -p "Enter Image name [alliance_keycloak]: " image
 
 
-sudo read -p "Enter Keycloak root username: " username
-sudo read -p "Enter Keycloak root password: " password
+sudo read -p "Enter Keycloak root username [root]: " username
+sudo read -p "Enter Keycloak root password [root]: " password
+sudo read -p "Enter Keycloak hostname [172.17.0.1]: " hostname
+sudo read -p "Enter Keycloak https port [8888]: " httpsPort
 
-#sudo read -p "Enter MySQL-Host [localhost]: " dbHost
-#sudo read -p "Enter MySQL-Port [3306]: " dbPort
-#sudo read -p "Enter MySQL-User [root]: " dbUser
-#sudo read -p "Enter MySQL-Password [root]: " dbPass
-#sudo read -p "Enter MySQL-Database [keycloak]: " dbName
+sudo read -p "Enter MySQL-Host [172.17.0.1]: " dbHost
+sudo read -p "Enter MySQL-Port [3306]: " dbPort
+sudo read -p "Enter MySQL-User [keycloak]: " dbUser
+sudo read -p "Enter MySQL-Password [password]: " dbPass
+sudo read -p "Enter MySQL-Database [keycloak]: " dbName
 
 composeVersion=${composeVersion:-2.2.3}
 container=${container:-alliance_keycloak}
 image=${image:-alliance_keycloak}
+hostname=${hostname:-172.17.0.1}
 
+dbHost=${dbHost:-172.17.0.1}
+dbPort=${dbPort:-3306}
+dbUser=${dbUser:-keycloak}
+dbPass=${dbPass:-password}
+dbName=${dbName:-keycloak}
 
-#dbHost=${dbHost:-localhost}
-#dbPort=${dbPort:-3306}
-#dbUser=${dbUser:-root}
-#dbPass=${dbPass:-root}
-#dbName=${dbName:-keycloak}
+username=${username:-root}
+password=${password:-root}
+
 
 echo "You selected version $composeVersion for docker-compose V2"
 
@@ -33,17 +39,22 @@ sudo apt upgrade -y
 # Install dependencies to add GPG Key for docker
 sudo apt-get install ca-certificates curl gnupg lsb-release tee sed
 
-# Update root username and password
-#sudo sed -e "s/*KEYCLOAK_USER*/- KEYCLOAK_USER=$username/" docker-compose.yml
-#sudo sed -e "s/*KEYCLOAK_PASSWORD*/- KEYCLOAK_PASSWORD=$username/" docker-compose.yml
-#sudo sed -e "s/*DB_ADDR*/- DB_ADDR=$dbHost/" docker-compose.yml
-#sudo sed -e "s/*DB_PORT*/- DB_PORT=$dbPort/" docker-compose.yml
-#sudo sed -e "s/*DB_DATABASE*/- DB_DATABASE=$dbName/" docker-compose.yml
-#sudo sed -e "s/*DB_USER*/- DB_USER=$dbUser/" docker-compose.yml
-#sudo sed -e "s/*DB_PASSWORD*/- DB_PASSWORD=$dbPass/" docker-compose.yml
-
 # Update container name in compose
 sudo sed -e "s/*container_name*/container_name: $container/" docker-compose.yml
+sudo sed -e "s/*8888:8888*/- \"httpsPort:8888\": $container/" docker-compose.yml
+
+
+# Update Dockerfile
+sudo sed -e "s/*KEYCLOAK_ADMIN*/ENV KEYCLOAK_ADMIN=$username/" Dockerfile
+sudo sed -e "s/*KEYCLOAK_ADMIN_PASSWORD*/ENV KEYCLOAK_ADMIN_PASSWORD=$password/" Dockerfile
+
+sudo sed -e "s/*KC_HOSTNAME*/ENV KC_HOSTNAME=$hostname/" Dockerfile
+sudo sed -e "s/*KC_DB_USERNAME*/ENV KC_DB_USERNAME=$dbUser/" Dockerfile
+sudo sed -e "s/*KC_DB_PASSWORD*/ENV KC_DB_PASSWORD=$dbPass/" Dockerfile
+sudo sed -e "s/*KC_DB_URL_DATABASE*/ENV KC_DB_URL_DATABASE=$dbName/" Dockerfile
+sudo sed -e "s/*KC_DB_URL_HOST*/ENV KC_DB_URL_HOST=$dbHost:$dbPort/" Dockerfile
+
+sudo sed -e "s/*KC_HTTPS_PORT*/ENV KC_HTTPS_PORT=$httpsPort/" Dockerfile
 
 # Add GPG Key for docker repo
 sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
@@ -79,17 +90,16 @@ sudo chown $USER:$USER -R cert/*
 # Build keycloak image
 docker build -t $image .
 docker compose up -d
-sleep 5
-docker container stop $container
+echo Done.
 
 # Configure service file
-sudo sed -e "s/*ExecStart*/ExecStart=docker container start $container/" keycloak.service
-sudo sed -e "s/*ExecStop*/ExecStop=docker container stop $container/" keycloak.service
+#sudo sed -e "s/*ExecStart*/ExecStart=docker container start $container/" keycloak.service
+#sudo sed -e "s/*ExecStop*/ExecStop=docker container stop $container/" keycloak.service
 
 # Copy service to systemd and enable startup
-sudo cp keycloak.service /etc/systemd/system/keycloak.service
-sudo systemctl daemon-reload
-sudo systemctl enable keycloak.service
+#sudo cp keycloak.service /etc/systemd/system/keycloak.service
+#sudo systemctl daemon-reload
+#sudo systemctl enable keycloak.service
 
 # Start service
-sudo service keycloak start
+#sudo service keycloak start
