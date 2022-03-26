@@ -1,0 +1,15 @@
+[Unit]
+Description=Alliance Keycloak Service
+Requires=docker.service
+After=docker.service
+
+[Service]
+ExecStart=docker container start alliance_keycloak
+ExecStop=docker container stop alliance_keycloak
+TimeoutStartSec=0
+Restart=on-failure
+StartLimitIntervalSec=60
+StartLimitBurst=3
+
+[Install]
+WantedBy=multi-user.target

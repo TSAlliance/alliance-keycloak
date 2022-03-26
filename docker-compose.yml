@@ -3,7 +3,7 @@ version: '3.9'
 
 services:
   keycloak:
-    image: keycloak
+    image: alliance_keycloak
     restart: always
     container_name: alliance_keycloak
     ports:
