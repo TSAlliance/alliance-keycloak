@@ -3,6 +3,11 @@ This repository contains several files for building a docker image.
 For security reasons, sensitive data was removed from the file and have to be
 configured manually before building the image.
 
+## Usage via install.sh
+```bash
+wget -O - https://raw.githubusercontent.com/TSAlliance/alliance-keycloak/main/install.sh | bash
+```
+
 ## Table of Contents
 1. Using the Dockerfile
     1. Admin credentials

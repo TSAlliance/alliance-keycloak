@@ -94,6 +94,10 @@ detectCertificate() {
         echo " "
         exit;
     fi
+
+    # Setup https files to be included in keycloak image
+    # (See Dockerfile)
+    sudo chown $USER:$USER -R cert/* >> /dev/null
 }
 
 # Clear terminal window at beginning of script
@@ -130,7 +134,6 @@ echo " "
 read -p "Continue with setting up keycloak image by pressing [ENTER]"
 clear
 
-
 #
 #
 #       Keycloak Section
@@ -155,7 +158,6 @@ hostname=$INPUT
 # Ask user for keycloak version
 getOptionalInput "Enter Keycloak Port [Default: 8888]: " 8888
 port=$INPUT
-
 
 #
 #
@@ -192,25 +194,70 @@ echo " "
 read -p "In the next step the Dockerfile is edited with your provided input. Please hit [ENTER] to proceed"
 clear
 
+# Write dockerfile
+sudo tee Dockerfile <<EOF
+    FROM quay.io/keycloak/keycloak:$version as builder
+
+    ENV KC_METRICS_ENABLED=true
+    ENV KC_FEATURES=token-exchange
+    ENV KC_DB=mysql
+    RUN /opt/keycloak/bin/kc.sh build
+
+    FROM quay.io/keycloak/keycloak:$version
+    COPY --from=builder /opt/keycloak/lib/quarkus/ /opt/keycloak/lib/quarkus/
+    WORKDIR /opt/keycloak
+
+    # for demonstration purposes only, please make sure to use proper certificates in production instead
+    ENV KEYCLOAK_ADMIN=$username
+    ENV KEYCLOAK_ADMIN_PASSWORD=$password
+
+    # MySQL URL settings
+    ENV KC_DB_URL_HOST=$dbHost:$dbPort
+    ENV KC_DB_URL_DATABASE=$dbName
+    ENV KC_DB_URL_PROPERTIES=?characterEncoding=UTF-8
+
+    # MySQL User settings
+    ENV KC_DB_USERNAME=$dbUser
+    ENV KC_DB_PASSWORD=$dbPass
+
+    # HTTP settings
+    RUN mkdir /opt/keycloak/cert/
+    COPY $CERT_FILE /opt/keycloak/cert/fullchain.pem
+    COPY $PRIVKEY_FILE /opt/keycloak/cert/privkey.pem
+
+    ENV KC_HTTPS_CERTIFICATE_FILE=cert/fullchain.pem
+    ENV KC_HTTPS_CERTIFICATE_KEY_FILE=cert/privkey.pem
+
+    # Port settings
+    ENV KC_HTTPS_PORT=$port
+    ENV KC_HTTP_PORT=8887
+    ENV KC_HTTP_ENABLED=false
+
+    # Proxy
+    ENV KC_PROXY=edge
+
+    # Hostname config
+    ENV KC_HOSTNAME=$hostname
+    ENV KC_HOSTNAME_STRICT=false
+
+    ENTRYPOINT ["/opt/keycloak/bin/kc.sh", "start"]
+EOF
+
 # Update Keycloak specific options in Dockerfile
-replace "^FROM quay.io\/keycloak\/keycloak:latest as builder" "FROM quay.io\/keycloak\/keycloak:$version as builder" ./Dockerfile
-replace "^FROM quay.io\/keycloak\/keycloak:latest" "FROM quay.io\/keycloak\/keycloak:$version" ./Dockerfile
+# replace "^FROM quay.io\/keycloak\/keycloak:latest as builder" "FROM quay.io\/keycloak\/keycloak:$version as builder" ./Dockerfile
+# replace "^FROM quay.io\/keycloak\/keycloak:latest" "FROM quay.io\/keycloak\/keycloak:$version" ./Dockerfile
 
-replace "^ENV KEYCLOAK_ADMIN=.*" "ENV KEYCLOAK_ADMIN=$username" ./Dockerfile
-replace "^ENV KEYCLOAK_ADMIN_PASSWORD=.*" "ENV KEYCLOAK_ADMIN_PASSWORD=$password" ./Dockerfile
-replace "^ENV KC_HOSTNAME=.*" "ENV KC_HOSTNAME=$hostname" ./Dockerfile
-replace "^ENV KC_HTTPS_PORT=.*" "ENV KC_HTTPS_PORT=$port" ./Dockerfile
+# replace "^ENV KEYCLOAK_ADMIN=.*" "ENV KEYCLOAK_ADMIN=$username" ./Dockerfile
+# replace "^ENV KEYCLOAK_ADMIN_PASSWORD=.*" "ENV KEYCLOAK_ADMIN_PASSWORD=$password" ./Dockerfile
+# replace "^ENV KC_HOSTNAME=.*" "ENV KC_HOSTNAME=$hostname" ./Dockerfile
+# replace "^ENV KC_HTTPS_PORT=.*" "ENV KC_HTTPS_PORT=$port" ./Dockerfile
 
-# Update MySQL specific options in Dockerfile
-replace "^ENV KC_DB_USERNAME=.*" "ENV KC_DB_USERNAME=$dbUser" ./Dockerfile
-replace "^ENV KC_DB_PASSWORD=.*" "ENV KC_DB_PASSWORD=$dbPass" ./Dockerfile
-replace "^ENV KC_DB_URL_DATABASE=.*" "ENV KC_DB_URL_DATABASE=$dbName" ./Dockerfile
-replace "^ENV KC_DB_URL_HOST=.*" "ENV KC_DB_URL_HOST=$dbHost:$dbPort" ./Dockerfile
+# # Update MySQL specific options in Dockerfile
+# replace "^ENV KC_DB_USERNAME=.*" "ENV KC_DB_USERNAME=$dbUser" ./Dockerfile
+# replace "^ENV KC_DB_PASSWORD=.*" "ENV KC_DB_PASSWORD=$dbPass" ./Dockerfile
+# replace "^ENV KC_DB_URL_DATABASE=.*" "ENV KC_DB_URL_DATABASE=$dbName" ./Dockerfile
+# replace "^ENV KC_DB_URL_HOST=.*" "ENV KC_DB_URL_HOST=$dbHost:$dbPort" ./Dockerfile
 clear
-
-# Setup https files to be included in keycloak image
-# (See Dockerfile)
-sudo chown $USER:$USER -R cert/*
 
 echo " "
 echo "Building image using Dockerfile..."
