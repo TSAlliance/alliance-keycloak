@@ -56,12 +56,18 @@ replace() {
 }
 
 installDocker() {
-    sudo apt-get install ca-certificates curl gnupg lsb-release tee sed
+    DOCKER_GPG_FILE=/usr/share/keyrings/docker-archive-keyring.gpg
 
-    # Add GPG Key for docker repo
-    sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg
+    sudo apt-get install ca-certificates curl gnupg lsb-release sed
+
+    # Only add gpg key file if it does not already exists
+    if [ ! -f "$DOCKER_GPG_FILE" ]; then
+        # Add GPG Key for docker repo
+        sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o $DOCKER_GPG_FILE
+    fi
+
     # Setup repository list entry
-    echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+    echo "deb [arch=$(dpkg --print-architecture) signed-by=$DOCKER_GPG_FILE] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
 
     # Install docker
     sudo apt -qq update 2> /dev/null 2>&1
@@ -88,13 +94,16 @@ installDocker() {
 }
 
 detectCertificate() {
-    if [[ ! -f CERT_FILE || ! -f PRIVKEY_FILE ]]; then
+    if [ ! -f "$CERT_FILE" ] || [ ! -f "$PRIVKEY_FILE" ]; then
         echo " "
         echo "Either file $CERT_FILE or $PRIVKEY_FILE is missing. Both are required for setting up a secured keycloak image."
         echo " "
         exit;
     fi
 
+    echo " "
+    echo "Please enter passwort to perform permission changes for cert files"
+    echo " "
     # Setup https files to be included in keycloak image
     # (See Dockerfile)
     sudo chown $USER:$USER -R cert/* >> /dev/null
