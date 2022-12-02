@@ -306,8 +306,11 @@ done
 getOptionalInput "How should your container be named? [Default: keycloak]: " "keycloak" "keycloak"
 containerName=$INPUT
 
-getOptionalInput "To which port should the exposed port 8888 be mapped? [Default: 8080]: " 8080
+getOptionalInput "To which port should the exposed port 8888 be mapped? [Default: 8888]: " 8888
 portMapping=$INPUT
+
+getOptionalInput "Set network_mode of the container. [Default: none]: " none
+networkMode=$INPUT
 
 clear
 echo ""
@@ -320,6 +323,7 @@ services:
     image: $IMAGE_NAME
     restart: always
     container_name: $containerName
+    network_mode: "$networkMode"
     ports:
       - "$portMapping:8888"
 EOF
