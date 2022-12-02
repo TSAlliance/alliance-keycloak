@@ -313,7 +313,7 @@ clear
 echo ""
 
 sudo tee docker-compose.yml <<EOF
-version: '3.9'
+version: '3.3'
 
 services:
   keycloak:
