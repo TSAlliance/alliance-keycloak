@@ -114,13 +114,20 @@ clear
 
 detectCertificate
 
-echo "Is Docker already installed on this system? If not, do you want to install it?"
-select yn in "Yes" "No"; do
-    case $yn in
-        Yes ) installDocker; break;;
-        No ) break;;
+
+# Ask user if docker is installed already
+while :
+do
+    clear
+
+    getRequiredInput "Is Docker already installed on this system? (n/y) "
+
+    case $INPUT in
+        y ) break;;
+        n ) installDocker; break;;
     esac
 done
+
 
 # Update system packages
 echo " "
@@ -280,18 +287,23 @@ echo " "
 clear
 echo "Your Keycloak Image/Container is now ready to go."
 echo " "
-echo "Do you want to setup a container using docker-compose?"
-select yn in "Yes" "No"; do
-    case $yn in
-        No ) exit;;
-        Yes ) break;;
+
+while :
+do
+    clear
+
+    getRequiredInput "Do you want to setup a container using docker-compose? (n/y) "
+
+    case $INPUT in
+        y ) break;;
+        n ) exit;;
     esac
 done
 
 # Continue with setting up container using docker-compose
 
 # Ask user for mysql port
-getOptionalInput "How should your container be named? [Default: keycloak]: " "keycloak"
+getOptionalInput "How should your container be named? [Default: keycloak]: " "keycloak" "keycloak"
 containerName=$INPUT
 
 getOptionalInput "To which port should the exposed port 8888 be mapped? [Default: 8080]: " 8080
@@ -300,7 +312,7 @@ portMapping=$INPUT
 clear
 echo ""
 
-sudo tee test.txt <<EOF
+sudo tee docker-compose.yml <<EOF
 version: '3.9'
 
 services:
@@ -323,7 +335,7 @@ echo " "
 read
 
 clear
-docker compose up -d
+docker-compose up -d
 
 echo "Docker container has been created using docker-compose."
 echo "You can now manage the container using docker."
