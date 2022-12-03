@@ -5,7 +5,7 @@ configured manually before building the image.
 
 ## Usage via install.sh
 ```bash
-wget https://raw.githubusercontent.com/TSAlliance/alliance-keycloak/main/install.sh && chmod 760 install.sh && ./install.sh
+wget https://raw.githubusercontent.com/TSAlliance/alliance-keycloak/main/setup.sh && chmod 760 setup.sh && ./setup.sh
 ```
 
 ## Table of Contents
