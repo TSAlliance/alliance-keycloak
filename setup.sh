@@ -53,7 +53,7 @@ detectCertificate() {
 }
 
 clear
-detectCertificate
+#detectCertificate
 
 # Install sed if not exists
 echo "[3] Installing sed package..."
@@ -100,7 +100,6 @@ RUN /opt/keycloak/bin/kc.sh build
 
 FROM quay.io/keycloak/keycloak:$kc_version
 COPY --from=builder /opt/keycloak/ /opt/keycloak/
-
 
 # change these values to point to a running mysql instance
 ENV KC_DB_URL_PROPERTIES=?characterEncoding=UTF-8
